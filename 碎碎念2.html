@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>🌙 碎碎念</title>
+
+<style>
+
+:root{
+ --bg:#f7f3ee;
+ --card:#fffdf9;
+ --text:#4d4038;
+ --light:#9b8a80;
+ --accent:#d8b4a0;
+ --shadow:0 8px 24px rgba(0,0,0,.08);
+}
+
+*{
+ margin:0;
+ padding:0;
+ box-sizing:border-box;
+}
+
+body{
+ background:var(--bg);
+ font-family:
+ system-ui,
+ -apple-system,
+ sans-serif;
+ color:var(--text);
+}
+
+.header{
+ text-align:center;
+ padding:40px 20px 20px;
+}
+
+.header h1{
+ font-size:2rem;
+ margin-bottom:8px;
+}
+
+.subtitle{
+ color:var(--light);
+ font-size:.9rem;
+}
+
+.container{
+ width:min(92%,700px);
+ margin:auto;
+ padding-bottom:120px;
+}
+
+.add-btn{
+ position:fixed;
+ right:24px;
+ bottom:24px;
+ width:64px;
+ height:64px;
+ border:none;
+ border-radius:50%;
+ background:#d9b7a5;
+ color:white;
+ font-size:30px;
+ box-shadow:var(--shadow);
+ cursor:pointer;
+}
+
+.card{
+ background:var(--card);
+ border-radius:28px;
+ padding:20px;
+ margin-bottom:18px;
+ box-shadow:var(--shadow);
+}
+
+.mood{
+ display:inline-block;
+ padding:6px 12px;
+ border-radius:999px;
+ background:#f8efe8;
+ margin-bottom:10px;
+ font-size:.85rem;
+}
+
+.date{
+ color:var(--light);
+ font-size:.8rem;
+ margin-bottom:12px;
+}
+
+.content{
+ line-height:1.8;
+ white-space:pre-wrap;
+}
+
+.actions{
+ display:flex;
+ gap:8px;
+ margin-top:16px;
+}
+
+.actions button{
+ border:none;
+ border-radius:12px;
+ padding:8px 14px;
+ cursor:pointer;
+}
+
+.edit-btn{
+ background:#f3ece6;
+}
+
+.delete-btn{
+ background:#ffe4e4;
+}
+
+.empty{
+ text-align:center;
+ color:var(--light);
+ padding:60px 20px;
+}
+
+.modal{
+ display:none;
+ position:fixed;
+ inset:0;
+ background:rgba(0,0,0,.35);
+ justify-content:center;
+ align-items:center;
+}
+
+.modal.show{
+ display:flex;
+}
+
+.modal-box{
+ width:min(92%,500px);
+ background:white;
+ border-radius:28px;
+ padding:24px;
+}
+
+.field{
+ margin-bottom:16px;
+}
+
+.field label{
+ display:block;
+ margin-bottom:6px;
+ color:var(--light);
+ font-size:.85rem;
+}
+
+.field input,
+.field textarea,
+.field select{
+ width:100%;
+ padding:12px;
+ border-radius:14px;
+ border:1px solid #e8ddd4;
+}
+
+.field textarea{
+ min-height:180px;
+ resize:none;
+}
+
+.save-btn{
+ width:100%;
+ border:none;
+ border-radius:14px;
+ padding:14px;
+ background:#d9b7a5;
+ color:white;
+ font-size:1rem;
+ cursor:pointer;
+}
+
+.footer{
+ text-align:center;
+ color:var(--light);
+ padding:30px;
+ line-height:1.8;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <h1>🌙 碎碎念</h1>
+  <div class="subtitle">
+    写给今天的自己 · 也写给未来的自己
+  </div>
+</div>
+
+<div class="container">
+
+  <div id="list"></div>
+
+</div>
+
+<button class="add-btn" onclick="openModal()">
++
+</button>
+
+<div class="modal" id="modal">
+
+<div class="modal-box">
+
+<div class="field">
+<label>日期</label>
+<input type="date" id="date">
+</div>
+
+<div class="field">
+<label>今天是什么心情？</label>
+
+<select id="mood">
+
+<option>🌷 平静</option>
+<option>😊 开心</option>
+<option>🍒 杨梅日</option>
+<option>✨ 小确幸</option>
+<option>☁️ 发呆</option>
+<option>🌙 晚安</option>
+<option>🥺 想念</option>
+<option>🤕 头痛</option>
+<option>😴 困困</option>
+<option>🫶 值得纪念</option>
+
+</select>
+
+</div>
+
+<div class="field">
+<label>今天想记下什么？</label>
+
+<textarea id="content"
+placeholder="一颗杨梅
+
+一只猫
+
+一片云
+
+一句话
+
+都值得被记住">
+</textarea>
+
+</div>
+
+<button class="save-btn"
+onclick="saveNote()">
+
+🌙 保存碎碎念
+
+</button>
+
+</div>
+
+</div><script>
+
+let notes =
+JSON.parse(
+localStorage.getItem('suisuinian-data')
+) || [];
+
+function render(){
+
+const list =
+document.getElementById('list');
+
+if(notes.length===0){
+
+list.innerHTML=`
+
+<div class="card">
+
+<div class="mood">
+🌙 第一页
+</div>
+
+<div class="date">
+今天
+</div>
+
+<div class="content">
+
+欢迎来到碎碎念。
+
+这里不用记录伟大的事情。
+
+一颗杨梅。
+
+一朵云。
+
+一句突然想起的话。
+
+都值得被留下。
+
+</div>
+
+</div>
+
+`;
+
+return;
+}
+
+notes.sort(
+(a,b)=>
+new Date(b.date)-
+new Date(a.date)
+);
+
+list.innerHTML=
+notes.map(note=>`
+
+<div class="card">
+
+<div class="mood">
+${note.mood}
+</div>
+
+<div class="date">
+${note.date}
+</div>
+
+<div class="content">
+${note.content}
+</div>
+
+<div class="actions">
+
+<button
+class="edit-btn"
+onclick="editNote(${note.id})">
+
+编辑
+
+</button>
+
+<button
+class="delete-btn"
+onclick="deleteNote(${note.id})">
+
+删除
+
+</button>
+
+</div>
+
+</div>
+
+`).join('');
+
+}
+
+function saveNote(){
+
+const date=
+document.getElementById('date').value;
+
+const mood=
+document.getElementById('mood').value;
+
+const content=
+document.getElementById('content')
+.value.trim();
+
+if(!date || !content){
+
+alert('写点东西再保存呀 🌷');
+
+return;
+
+}
+
+notes.push({
+
+id:Date.now(),
+
+date,
+
+mood,
+
+content
+
+});
+
+localStorage.setItem(
+'suisuinian-data',
+JSON.stringify(notes)
+);
+
+closeModal();
+
+render();
+
+document.getElementById('content').value='';
+
+}
+
+function deleteNote(id){
+
+if(!confirm('确定删除这条碎碎念吗？')){
+
+return;
+
+}
+
+notes=
+notes.filter(
+item=>item.id!==id
+);
+
+localStorage.setItem(
+'suisuinian-data',
+JSON.stringify(notes)
+);
+
+render();
+
+}
+
+function editNote(id){
+
+const note=
+notes.find(
+n=>n.id===id
+);
+
+if(!note) return;
+
+const newText=
+prompt(
+'修改内容',
+note.content
+);
+
+if(newText===null) return;
+
+note.content=
+newText.trim();
+
+localStorage.setItem(
+'suisuinian-data',
+JSON.stringify(notes)
+);
+
+render();
+
+}
+
+function openModal(){
+
+document
+.getElementById('modal')
+.classList
+.add('show');
+
+document
+.getElementById('date')
+.value=
+new Date()
+.toISOString()
+.slice(0,10);
+
+}
+
+function closeModal(){
+
+document
+.getElementById('modal')
+.classList
+.remove('show');
+
+}
+
+document
+.getElementById('modal')
+.addEventListener(
+'click',
+e=>{
+
+if(e.target.id==='modal'){
+
+closeModal();
+
+}
+
+}
+);
+
+render();
+
+</script><div class="footer">
+
+这里收集的不是重要的事
+
+<br><br>
+
+而是那些差一点就会忘记的瞬间
+
+<br><br>
+
+🌙
+
+</div>
+
+</body>
+</html>
